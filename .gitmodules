@@ -1,0 +1,3 @@
+[submodule "exploding_kittens"]
+	path = exploding_kittens
+	url = git@github.com:drsolaris/exploding_kittens.git
