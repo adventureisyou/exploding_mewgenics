@@ -1,24 +1,25 @@
 from collections import Counter
-from .player import Player
-from .cards import *
-from .actions.draw import Draw, PlayDefuse, Explode, PutCardInDrawPile
-from .actions.givecard import GiveCard
-from .actions.playattack import PlayAttack
-from .actions.playfavor import PlayFavor
-from .actions.playfivedifferentcards import PlayFiveDifferentCards, TakeCardFromDiscardPile
-from .actions.playnope import PlayNope, PlayNopeOptions, PassOptions
-from .actions.playpair import PlayPair
-from .actions.playseethefuture import PlaySeeTheFuture, SeeTheFuture
-from .actions.playshuffle import PlayShuffle
-from .actions.playskip import PlaySkip
-from .actions.playtrio import PlayTrio, AnnounceDontHaveCard
-from .player import Hand
+
+from exploding_kittens.player import Player
+from exploding_kittens.cards import *
+from exploding_kittens.actions.draw import Draw, PlayDefuse, Explode, PutCardInDrawPile
+from exploding_kittens.actions.givecard import GiveCard
+from exploding_kittens.actions.playattack import PlayAttack
+from exploding_kittens.actions.playfavor import PlayFavor
+from exploding_kittens.actions.playfivedifferentcards import PlayFiveDifferentCards, TakeCardFromDiscardPile
+from exploding_kittens.actions.playnope import PlayNope, PlayNopeOptions, PassOptions
+from exploding_kittens.actions.playpair import PlayPair
+from exploding_kittens.actions.playseethefuture import PlaySeeTheFuture, SeeTheFuture
+from exploding_kittens.actions.playshuffle import PlayShuffle
+from exploding_kittens.actions.playskip import PlaySkip
+from exploding_kittens.actions.playtrio import PlayTrio, AnnounceDontHaveCard
+from exploding_kittens.player import Hand
 
 
 class RobotPlayer(Player):
-  def __init__(self, id_, starting_cards, net):
+  def __init__(self, id_, net):
     self.id = id_
-    self.hand = Hand(starting_cards)
+    self.hand = Hand()
     self.net = net
 
   def tell_game_ready_to_begin(self, players):
@@ -116,12 +117,12 @@ class RobotPlayer(Player):
       self.__hand_knowledge[self.__other_player].count(melon),     # charlie_melon_count
       self.__hand_knowledge[self.__other_player].count(taco),      # charlie_taco_count
       len(self.__draw_pile_knowledge),                             # deck_count
-      int(len(self.__draw_pile_knowledge) == 1 or self.__draw_pile_knowledge[-1] == exploding),                 # deck_card_1_is_exploding_ind
-      int(len(self.__draw_pile_knowledge) > 1 and self.__draw_pile_knowledge[-1] not in (unknown, exploding)),  # deck_card_1_is_not_exploding_ind
-      int(len(self.__draw_pile_knowledge) > 1 and self.__draw_pile_knowledge[-2] == exploding),                 # deck_card_2_is_exploding_ind
-      int(len(self.__draw_pile_knowledge) > 1 and self.__draw_pile_knowledge[-2] not in (unknown, exploding)),  # deck_card_2_is_not_exploding_ind
-      int(len(self.__draw_pile_knowledge) > 2 and self.__draw_pile_knowledge[-3] == exploding),                 # deck_card_3_is_exploding_ind
-      int(len(self.__draw_pile_knowledge) > 2 and self.__draw_pile_knowledge[-3] not in (unknown, exploding)),  # deck_card_3_is_not_exploding_ind
+      len(self.__draw_pile_knowledge) == 1 or self.__draw_pile_knowledge[-1] == exploding,                 # deck_card_1_is_exploding_ind
+      len(self.__draw_pile_knowledge) > 1 and self.__draw_pile_knowledge[-1] not in (unknown, exploding),  # deck_card_1_is_not_exploding_ind
+      len(self.__draw_pile_knowledge) > 1 and self.__draw_pile_knowledge[-2] == exploding,                 # deck_card_2_is_exploding_ind
+      len(self.__draw_pile_knowledge) > 1 and self.__draw_pile_knowledge[-2] not in (unknown, exploding),  # deck_card_2_is_not_exploding_ind
+      len(self.__draw_pile_knowledge) > 2 and self.__draw_pile_knowledge[-3] == exploding,                 # deck_card_3_is_exploding_ind
+      len(self.__draw_pile_knowledge) > 2 and self.__draw_pile_knowledge[-3] not in (unknown, exploding),  # deck_card_3_is_not_exploding_ind
     )
 
     #print('Player' + str(self.id))
@@ -247,8 +248,10 @@ class RobotPlayer(Player):
       self.__discard_pile_knowledge.add(action.cards)
 
   def _process_announcedonthavecard(self, action):
-    for _ in range(self.__hand_knowledge[action.player][action.card]):
-      self.__hand_knowledge[action.player].remove(action.card)
+    pass
+    #for _ in range(self.__hand_knowledge[action.player][action.card]):
+    #  self.__hand_knowledge[action.player].remove(action.card)
 
   def _process_announcedonthaveanycards(self, action):
-    self.__hand_knowledge[action.player] = Hand()
+    pass
+    #self.__hand_knowledge[action.player] = Hand()

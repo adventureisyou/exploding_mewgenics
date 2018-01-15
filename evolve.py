@@ -1,20 +1,18 @@
-import os
-import neat
-# import trueskill
-from game.game import Game
-import random
 from collections import Counter
-import pprint
-import multiprocessing as mp
-pp = pprint.PrettyPrinter(indent=2)
-import pickle
 from datetime import datetime
+import multiprocessing as mp
+import os
+import pickle
+import random
+
 from elo import Rating, rate_1vs1
+import neat
 
-prev_gen = {}
+from exploding_kittens.game import Game
+from robotplayer import RobotPlayer
+
 ways_parallel = 4
-first_to = 4
-
+first_to = 1
 
 def worker(in_q, out_q):
   while True:
@@ -34,7 +32,7 @@ class WorkUnit(object):
     p1wins = 0
     p2wins = 0
     while True:
-      winner = Game((p1[1], p2[1])).play()
+      winner = Game([RobotPlayer(0, p1[1]), RobotPlayer(1, p2[1])]).play()
       p1wins += 1 - winner
       p2wins += winner
       if p1wins == first_to:
@@ -59,7 +57,7 @@ def eval_genomes(genomes, config):
 
   random_order = [x[0] for x in genomes]
 
-  for _ in range(20):
+  for _ in range(2):
     random.shuffle(random_order)
 
     counter = 0
@@ -79,19 +77,11 @@ def eval_genomes(genomes, config):
   for _ in range(ways_parallel):
     in_q.put(None)
 
-  pp.pprint(sorted([(k, v) for k, v in ratings.items()], key=lambda x: int(x[1]), reverse=True))
-
-  prev_gen.clear()
-
   for genome_id, genome in genomes:
     genome.fitness = ratings[genome_id]
-    file_Name = '{}.net'.format(genome_id)
-    with open(file_Name, 'wb') as fileObject:
-      pickle.dump(nets[genome_id], fileObject)
-    prev_gen[genome_id] = (ratings[genome_id], nets[genome_id])
-
-  #avg_mu = sum([x.mu for x in ratings.values()])/len(ratings)
-
+    # file_Name = '{}.net'.format(genome_id)
+    # with open(file_Name, 'wb') as fileObject:
+    #   pickle.dump(nets[genome_id], fileObject)
 
 def run(config_file):
   # Load configuration.
@@ -108,24 +98,11 @@ def run(config_file):
   p.add_reporter(stats)
   p.add_reporter(neat.Checkpointer(25))
 
-  # Run for up to 300 generations.
+  # Run for up to n generations.
   winner = p.run(eval_genomes, 1000000)
 
   # Display the winning genome.
   print('\nBest genome:\n{!s}'.format(winner))
-
-  # Show output of the most fit genome against training data.
-  print('\nOutput:')
-  winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-  for xi, xo in zip(xor_inputs, xor_outputs):
-    output = winner_net.activate(xi)
-    print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
-
-  node_names = {-1:'A', -2: 'B', 0:'A XOR B'}
-
-  p = neat.Checkpointer.restore_checkpoint('neat-checkpoint-4')
-  p.run(eval_genomes, 10)
-
 
 if __name__ == '__main__':
   # Determine path to configuration file. This path manipulation is
