@@ -18,19 +18,41 @@ from exploding_kittens.player import Hand
 
 class RobotPlayer(Player):
   def __init__(self, id_, net):
+    """
+    Creates a robot player with the ability of the given neural network.
+    Inherits the Player class, allowing gradual increase of intelligence
+    as more methods are overwritten.
+    """
     self.id = id_
     self.hand = Hand()
     self.net = net
 
   def tell_game_ready_to_begin(self, players):
+    """
+    Let the player know that the state of a game has been intialised.
+    The list of player objects is passed in here to allow for identifying
+    other players.
+
+    TODO: really, a public version of the player class
+    should exist for all players and be passed in here so that players
+    can't accidentally access private information about other player's hands.
+    """
     self.__players = players
     self.__discard_pile_knowledge = Hand()
+
+    # TODO: figure out the length of draw pile based on num players
     self.__draw_pile_knowledge = [unknown]*43
     self.__hand_knowledge = {}
+
+    # TODO: support multiple players. This is a hack to support 2-player for PoC
     self.__other_player = players[0] if players[0] != self else players[1]
+
+    # Keep a Hand object with unknowns for all opponents
+    # TODO: We shouldn't have to track hand knowledge for the current player
     for player in self.__players:
       self.__hand_knowledge[player] = Hand([unknown]*4 + [defuse])
 
+    # How to interpret network output nodes. TODO: named tuple
     self.actions = (
       Draw(self),
       PlayNope(self),
@@ -64,10 +86,16 @@ class RobotPlayer(Player):
     )
 
   def pick_action(self, options):
+    """
+    Given a set of options, run the current known game state through the network
+    and pick the most preferred valid option as the action to proceed with.
+    """
     play_type_nope = False
     play_type_give = False
     play_type_discard = True
 
+    # Decide play type from object types. I'm certain this is the wrong thing to do,
+    # but not sure what would be better. TODO.
     if isinstance(options[0], PlayNopeOptions) or isinstance(options[0], PassOptions):
       play_type_nope = True
       play_type_discard = False
@@ -75,6 +103,7 @@ class RobotPlayer(Player):
       play_type_give = True
       play_type_discard = False
 
+    # Network inputs. TODO: named tuple
     inputs = (
       int(play_type_discard),    # play_type_discard
       int(play_type_nope),       # play_type_nope
@@ -125,22 +154,23 @@ class RobotPlayer(Player):
       len(self.__draw_pile_knowledge) > 2 and self.__draw_pile_knowledge[-3] not in (unknown, exploding),  # deck_card_3_is_not_exploding_ind
     )
 
-    #print('Player' + str(self.id))
-    #print(inputs)
-
+    # Run the network.
     outputs = self.net.activate(inputs)
 
-    #print(outputs)
-
+    # Sort the outputs in descending order and return the highest valid action.
     preferred_actions = list(zip(*sorted(zip(self.actions, outputs), key=lambda x: x[1], reverse=True)))[0]
     for action in preferred_actions:
       if action in options:
         return action
 
-    #print('NO MATCHING ACTIONS')
+    # If no actions are valid, pick a random one.
     return options.pick_random_action()
 
   def tell_action(self, action):
+    """
+    Here, we check if the given action has a _process_* class method defined.
+    If that exists, the method is ran to update internal knowledge.
+    """
     name = '_process_{}'.format(action.__class__.__name__.lower().replace('public', ''))
     try:
       function = getattr(self, name)
@@ -151,12 +181,18 @@ class RobotPlayer(Player):
   def _process_draw(self, action):
     self.__hand_knowledge[action.player].add(self.__draw_pile_knowledge.pop())
 
+# TODO: lots of repetition regarding removing cards from players' hands if
+# the card is known. MAke this more DRY, possibly implement a HandKnowledge
+# class that extends Hand with methods for doing this.
+
   def _process_playdefuse(self, action):
     card = defuse if defuse in self.__hand_knowledge[action.player] else unknown
     self.__hand_knowledge[action.player].remove(card)
     self.__discard_pile_knowledge.add(defuse)
 
   def _process_explode(self, action):
+    # Currently nothing to do if a player explodes (2P: the game ends).
+    # TODO: When we support more than two players this will need updating.
     pass
 
   def _process_putcardindrawpile(self, action):
