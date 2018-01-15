@@ -248,10 +248,8 @@ class RobotPlayer(Player):
       self.__discard_pile_knowledge.add(action.cards)
 
   def _process_announcedonthavecard(self, action):
-    pass
-    #for _ in range(self.__hand_knowledge[action.player][action.card]):
-    #  self.__hand_knowledge[action.player].remove(action.card)
+    for _ in range(self.__hand_knowledge[action.player][action.card]):
+      self.__hand_knowledge[action.player].remove(action.card)
 
   def _process_announcedonthaveanycards(self, action):
-    pass
-    #self.__hand_knowledge[action.player] = Hand()
+    self.__hand_knowledge[action.player] = Hand()
